@@ -108,6 +108,9 @@ final class TsdbQuery implements Query {
   /** Minimum time interval (in seconds) wanted between each data point. */
   private int sample_interval;
 
+  /** Number of hbase rows to scan in one pass */
+  private int max_row_scan;
+
   /** Constructor. */
   public TsdbQuery(final TSDB tsdb) {
     this.tsdb = tsdb;
@@ -386,6 +389,7 @@ final class TsdbQuery implements Query {
       createAndSetFilter(scanner);
     }
     scanner.setFamily(TSDB.FAMILY);
+    scanner.setMaxNumRows(getMaxHbaseRows());
     return scanner;
   }
 
@@ -576,6 +580,30 @@ final class TsdbQuery implements Query {
     }
     buf.append("))");
     return buf.toString();
+  }
+
+  /**
+   * Return the number of rows asynchbase should scan in one call
+   */
+  private int getMaxHbaseRows() {
+    if(max_row_scan == 0) {
+      String rows = System.getenv("HBASE_MAX_ROWS");
+      try {
+        if(rows != null) {
+          max_row_scan = Integer.parseInt(rows);
+        } else {
+          max_row_scan = 128;
+        }
+      } catch (NumberFormatException e) {
+        // Do nothing
+      }
+      if(max_row_scan <= 0) {
+        LOG.error(rows + " is not a legit value for HBASE_MAX_ROWS");
+        max_row_scan = 128;
+      }
+      LOG.info("HBASE_MAX_ROWS set to " + max_row_scan);
+    }
+    return max_row_scan;
   }
 
   /**
