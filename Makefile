@@ -172,7 +172,7 @@ $(top_builddir)/.staticroot-stamp: $(dist_pkgdata_DATA) $(top_builddir)/.gwtc-st
 	cp $(dist_pkgdata_DATA) $(DEV_TSD_STATICROOT)
 	find -L $(DEV_TSD_STATICROOT) -type l -delete
 	p=`pwd`/$(top_builddir)/gwt/queryui && cd $(DEV_TSD_STATICROOT) \
-	  && for i in $$p/*; do ln -s -f "$$i" || break; done
+	  && for i in $$p/*; do x=`echo $$i | sed 's/.*\/gwt/\.\.\/gwt/'`;  echo $$x; ln -s "$$x"  || break; done
 	@touch $(top_builddir)/.staticroot-stamp
 
 get_runtime_dep_classpath = `echo $(test_LIBADD) | tr ' ' ':'`
