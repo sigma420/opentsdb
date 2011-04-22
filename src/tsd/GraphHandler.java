@@ -133,9 +133,9 @@ final class GraphHandler implements HttpRpc {
     final int max_age = (end_time > now ? 0                              // (1)
                          : (end_time < now - Const.MAX_TIMESPAN ? 86400  // (2)
                             : (int) (end_time - start_time) >> 10));     // (3)
-    /*if (isDiskCacheHit(query, max_age, basepath)) {
+    if (isDiskCacheHit(query, max_age, basepath)) {
       return;
-    }*/
+    }
     Query[] tsdbqueries;
     List<String> options;
     tsdbqueries = parseQuery(tsdb, query);
@@ -340,6 +340,11 @@ final class GraphHandler implements HttpRpc {
   private boolean isDiskCacheHit(final HttpQuery query,
                                  final int max_age,
                                  final String basepath) throws IOException {
+
+   									 
+    if (System.getProperty("tsd.core.disable_cache") != null)
+		return false;
+
     final String cachepath = basepath + (query.hasQueryStringParam("ascii")
                                          ? ".txt" : ".png");
     final File cachedfile = new File(cachepath);

@@ -101,6 +101,8 @@ final class TSDMain {
                    + " metrics to be tracked");
     argp.addOption("--hbase-row-scan", "NUM",
                    "Number of rows to scan from hbase in a single pass");
+    argp.addOption("--disable-cache", "Every request is recomputed"
+                   + " from hbase. Normal users should not enable this");
     args = CliOptions.parse(argp, args);
     if (args == null || !argp.has("--port")
         || !argp.has("--staticroot") || !argp.has("--cachedir")) {
@@ -116,6 +118,10 @@ final class TSDMain {
 
     if (argp.has("--hbase-row-scan")) {
       System.setProperty("tsd.core.hbase_rows_per_scan", argp.get("--hbase-row-scan"));
+    }
+
+    if (argp.has("--disable-cache")) {
+      System.setProperty("tsd.core.disable_cache", "true");
     }
 
     final short flush_interval = getFlushInterval(argp);
