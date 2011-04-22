@@ -592,7 +592,7 @@ final class TsdbQuery implements Query {
    */
   private int getMaxHbaseRows() {
     if(max_row_scan == 0) {
-      String rows = System.getenv("HBASE_MAX_ROWS");
+      String rows = System.getProperty("tsd.core.hbase_rows_per_scan");
       try {
         if(rows != null) {
           max_row_scan = Integer.parseInt(rows);
@@ -606,7 +606,7 @@ final class TsdbQuery implements Query {
         LOG.error(rows + " is not a legit value for HBASE_MAX_ROWS");
         max_row_scan = 128;
       }
-      LOG.info("HBASE_MAX_ROWS set to " + max_row_scan);
+      LOG.debug("HBASE_MAX_ROWS set to " + max_row_scan);
     }
     return max_row_scan;
   }

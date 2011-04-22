@@ -99,6 +99,8 @@ final class TSDMain {
     argp.addOption("--auto-metric", "Automatically add metrics to tsdb as they"
                    + " are inserted.  Warning: this may cause unexpected"
                    + " metrics to be tracked");
+    argp.addOption("--hbase-row-scan", "NUM",
+                   "Number of rows to scan from hbase in a single pass");
     args = CliOptions.parse(argp, args);
     if (args == null || !argp.has("--port")
         || !argp.has("--staticroot") || !argp.has("--cachedir")) {
@@ -110,6 +112,10 @@ final class TSDMain {
 
     if (argp.has("--auto-metric")) {
       System.setProperty("tsd.core.auto_create_metrics", "true");
+    }
+
+    if (argp.has("--hbase-row-scan")) {
+      System.setProperty("tsd.core.hbase_rows_per_scan", argp.get("--hbase-row-scan"));
     }
 
     final short flush_interval = getFlushInterval(argp);
