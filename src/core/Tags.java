@@ -72,7 +72,8 @@ public final class Tags {
    * @param tags The HashMap into which to store the tag.
    * @param tag A String of the form "tag=value".
    * @throws IllegalArgumentException if the tag is malformed.
-   * @throws IllegalArgumentException if the tag was already in tags.
+   * @throws IllegalArgumentException if the tag was already in tags with a
+   * different value.
    */
   public static void parse(final HashMap<String, String> tags,
                            final String tag) {
@@ -80,11 +81,101 @@ public final class Tags {
     if (kv.length != 2 || kv[0].length() <= 0 || kv[1].length() <= 0) {
       throw new IllegalArgumentException("invalid tag: " + tag);
     }
+    if (kv[1].equals(tags.get(kv[0]))) {
+        return;
+    }
     if (tags.get(kv[0]) != null) {
       throw new IllegalArgumentException("duplicate tag: " + tag
                                          + ", tags=" + tags);
     }
     tags.put(kv[0], kv[1]);
+  }
+
+  /**
+   * Parses the metric and tags out of the given string.
+   * @param metric A string of the form "metric" or "metric{tag=value,...}".
+   * @param tags The map to populate with the tags parsed out of the first
+   * argument.
+   * @return The name of the metric.
+   * @throws IllegalArgumentException if the metric is malformed.
+   */
+  public static String parseWithMetric(final String metric,
+                                       final HashMap<String, String> tags) {
+    final int curly = metric.indexOf('{');
+    if (curly < 0) {
+      return metric;
+    }
+    final int len = metric.length();
+    if (metric.charAt(len - 1) != '}') {  // "foo{"
+      throw new IllegalArgumentException("Missing '}' at the end of: " + metric);
+    } else if (curly == len - 2) {  // "foo{}"
+      return metric.substring(0, len - 2);
+    }
+    // substring the tags out of "foo{a=b,...,x=y}" and parse them.
+    for (final String tag : splitString(metric.substring(curly + 1, len - 1),
+                                        ',')) {
+      try {
+        parse(tags, tag);
+      } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException("When parsing tag '" + tag
+                                           + "': " + e.getMessage());
+      }
+    }
+    // Return the "foo" part of "foo{a=b,...,x=y}"
+    return metric.substring(0, curly);
+  }
+
+  /**
+   * Parses an integer value as a long from the given character sequence.
+   * <p>
+   * This is equivalent to {@link Long.parseLong(String)} except it's up to
+   * 100% faster on {@link String} and always works in O(1) space even with
+   * {@link StringBuilder} buffers (where it's 2x to 5x faster).
+   * @param s The character sequence containing the integer value to parse.
+   * @return The value parsed.
+   * @throws NumberFormatException if the value is malformed or overflows.
+   */
+  public static long parseLong(final CharSequence s) {
+    final int n = s.length();  // Will NPE if necessary.
+    if (n == 0) {
+      throw new NumberFormatException("Empty string");
+    }
+    char c = s.charAt(0);  // Current character.
+    int i = 1;  // index in `s'.
+    if (c < '0' && (c == '+' || c == '-')) {  // Only 1 test in common case.
+      if (n == 1) {
+        throw new NumberFormatException("Just a sign, no value: " + s);
+      } else if (n > 20) {  // "+9223372036854775807" or "-9223372036854775808"
+          throw new NumberFormatException("Value too long: " + s);
+      }
+      c = s.charAt(1);
+      i = 2;  // Skip over the sign.
+    } else if (n > 19) {  // "9223372036854775807"
+      throw new NumberFormatException("Value too long: " + s);
+    }
+    long v = 0;  // The result (negated to easily handle MIN_VALUE).
+    do {
+      if ('0' <= c && c <= '9') {
+        v -= c - '0';
+      } else {
+        throw new NumberFormatException("Invalid character '" + c
+                                        + "' in " + s);
+      }
+      if (i == n) {
+        break;
+      }
+      v *= 10;
+      c = s.charAt(i++);
+    } while (true);
+    if (v > 0) {
+      throw new NumberFormatException("Overflow in " + s);
+    } else if (s.charAt(0) == '-') {
+      return v;  // Value is already negative, return unchanged.
+    } else if (v == Long.MIN_VALUE) {
+      throw new NumberFormatException("Overflow in " + s);
+    } else {
+      return -v;  // Positive value, need to fix the sign.
+    }
   }
 
   /**
@@ -192,7 +283,9 @@ public final class Tags {
     if (s == null) {
       throw new IllegalArgumentException("Invalid " + what + ": null");
     }
-    for (char c : s.toCharArray()) {
+    final int n = s.length();
+    for (int i = 0; i < n; i++) {
+      final char c = s.charAt(i);
       if (!(('a' <= c && c <= 'z')
             || ('A' <= c && c <= 'Z')
             || ('0' <= c && c <= '9')

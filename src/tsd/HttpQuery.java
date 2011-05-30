@@ -42,6 +42,7 @@ import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.jboss.netty.util.CharsetUtil;
 
+import net.opentsdb.core.Const;
 import net.opentsdb.graph.Plot;
 import net.opentsdb.stats.Histogram;
 import net.opentsdb.stats.StatsCollector;
@@ -285,11 +286,6 @@ final class HttpQuery {
     sendReply(buf);
   }
 
-  private static final byte[] HEX = {
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-    'A', 'B', 'C', 'D', 'E', 'F'
-  };
-
   /**
    * Escapes a string appropriately to be a valid in JSON.
    * Valid JSON strings are defined in RFC 4627, Section 2.5.
@@ -335,8 +331,8 @@ final class HttpQuery {
       }
       if (c < 0x001F) {
         buf.append('\\').append('u').append('0').append('0')
-          .append((char) HEX[(c >>> 4) & 0x0F])
-          .append((char) HEX[c & 0x0F]);
+          .append((char) Const.HEX[(c >>> 4) & 0x0F])
+          .append((char) Const.HEX[c & 0x0F]);
       } else {
         buf.append(c);
       }
@@ -480,6 +476,10 @@ final class HttpQuery {
       throw new IllegalArgumentException("Negative max_age=" + max_age
                                          + " for path=" + path);
     }
+    if (!chan.isConnected()) {
+      done();
+      return;
+    }
     RandomAccessFile file;
     try {
       file = new RandomAccessFile(path, "r");
@@ -541,12 +541,13 @@ final class HttpQuery {
    */
   private void sendBuffer(final HttpResponseStatus status,
                           final ChannelBuffer buf) {
+    if (!chan.isConnected()) {
+      done();
+      return;
+    }
     final DefaultHttpResponse response =
       new DefaultHttpResponse(HttpVersion.HTTP_1_1, status);
-    response.setHeader(HttpHeaders.Names.CONTENT_TYPE,
-                       (status == HttpResponseStatus.OK
-                        ? guessMimeType(buf)
-                        : HTML_CONTENT_TYPE));  // Error pages are in HTML.
+    response.setHeader(HttpHeaders.Names.CONTENT_TYPE, guessMimeType(buf));
     // TODO(tsuna): Server, X-Backend, etc. headers.
     response.setContent(buf);
     final boolean keepalive = HttpHeaders.isKeepAlive(request);
