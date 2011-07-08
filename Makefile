@@ -115,7 +115,7 @@ GWTC_JVM_ARGS =  # add jvmarg -Xss16M or similar if you see a StackOverflowError
 GWTC_ARGS = -ea  # Additional arguments like -style PRETTY or -logLevel DEBUG
 
 TESTS = $(test_JAVA:src/%.java=$(top_builddir)/$(package_dir)/%.class)
-AM_JAVACFLAGS = -Xlint -source 6
+AM_JAVACFLAGS = -Xlint -source 6 -g
 JVM_ARGS =
 package_dir = $(subst .,/,$(package))
 classes=$(tsdb_JAVA:src/%.java=$(top_builddir)/$(package_dir)/%.class) \
