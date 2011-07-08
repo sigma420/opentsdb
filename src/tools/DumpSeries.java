@@ -126,7 +126,7 @@ final class DumpSeries {
             }
             final byte[] qualifier = kv.qualifier();
             final short deltaflags = Bytes.getShort(qualifier);
-            final short delta = (short) (deltaflags >>> 4);
+            final short delta = (short) ((0x0000ffff &deltaflags) >>> 4);
             final byte[] cell = kv.value();
             final long lvalue = Core.extractLValue(deltaflags, kv);
             if (importformat) {
