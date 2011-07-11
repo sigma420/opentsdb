@@ -21,6 +21,9 @@ import java.util.Set;
  */
 public final class Aggregators {
 
+  /** Aggregator that zimsums up all the data points. */
+  public static final Aggregator ZIMSUM = new ZIMSum();
+ 
   /** Aggregator that sums up all the data points. */
   public static final Aggregator SUM = new Sum();
 
@@ -38,6 +41,7 @@ public final class Aggregators {
 
   static {
     aggregators = new HashMap<String, Aggregator>(4);
+    aggregators.put("zimsum", ZIMSUM);
     aggregators.put("sum", SUM);
     aggregators.put("min", MIN);
     aggregators.put("max", MAX);
@@ -177,6 +181,29 @@ public final class Aggregators {
 
     public String toString() {
       return "avg";
+    }
+
+  }
+   private static final class ZIMSum implements Aggregator {
+
+    public long runLong(final Longs values) {
+      long result = values.nextLongValueNoLerp();
+      while (values.hasNextValue()) {
+        result += values.nextLongValueNoLerp();
+      }
+      return result;
+    }
+
+    public double runDouble(final Doubles values) {
+      double result = values.nextDoubleValueNoLerp();
+      while (values.hasNextValue()) {
+        result += values.nextDoubleValueNoLerp();
+      }
+      return result;
+    }
+
+    public String toString() {
+      return "zimsum";
     }
 
   }

@@ -43,6 +43,8 @@ public interface Aggregator {
      * {@code false}.
      */
     long nextLongValue();
+ 
+    long nextLongValueNoLerp();
 
   }
 
@@ -66,6 +68,8 @@ public interface Aggregator {
      * {@code false}.
      */
     double nextDoubleValue();
+    
+    double nextDoubleValueNoLerp();
 
   }
 

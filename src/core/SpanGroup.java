@@ -735,6 +735,36 @@ final class SpanGroup implements DataPoints {
       }
       throw new NoSuchElementException("no more longs in " + this);
     }
+    public long nextLongValueNoLerp(){
+      if (hasNextValue(true)) {
+        final long y0 = values[pos];
+        if (rate) {
+          throw new AssertionError("Should not be here, impossible! " + this);
+        }
+        if (current == pos) {
+          return y0;
+        }
+        final long x = timestamps[current] & TIME_MASK;
+        final long x0 = timestamps[pos] & TIME_MASK;
+        if (x == x0) {
+          return y0;
+        }
+        final long y1 = values[pos + iterators.length];
+        final long x1 = timestamps[pos + iterators.length] & TIME_MASK;
+        if (x == x1) {
+          return y1;
+        }
+        final long r = 0;
+        //final long r = y0 + (x - x0) * (y1 - y0) / (x1 - x0);
+        //LOG.debug("Lerping to time " + x + ": " + y0 + " @ " + x0
+        //          + " -> " + y1 + " @ " + x1 + " => " + r);
+        if ((x1 & 0xFFFFFFFF00000000L) != 0) {
+          throw new AssertionError("x1=" + x1 + " in " + this);
+        }
+        return r;
+      }
+      throw new NoSuchElementException("no more longs in " + this);
+    }
 
     // ---------------------------- //
     // Aggregator.Doubles interface //
@@ -786,6 +816,54 @@ final class SpanGroup implements DataPoints {
       }
       throw new NoSuchElementException("no more doubles in " + this);
     }
+    public double nextDoubleValueNoLerp() {
+      if (hasNextValue(true)) {
+        final double y0 = ((timestamps[pos] & FLAG_FLOAT) == FLAG_FLOAT
+                           ? Double.longBitsToDouble(values[pos])
+                           : values[pos]);
+        if (rate) {
+          final long x0 = timestamps[pos] & TIME_MASK;
+          final int prev = pos + iterators.length * 2;
+          final double y1 = ((timestamps[prev] & FLAG_FLOAT) == FLAG_FLOAT
+                             ? Double.longBitsToDouble(values[prev])
+                             : values[prev]);
+          final long x1 = timestamps[prev] & TIME_MASK;
+          final double r = (y0 - y1) / (x0 - x1);
+          //LOG.debug("Rate for " + y1 + " @ " + x1
+          //          + " -> " + y0 + " @ " + x0 + " => " + r);
+          return r;
+        }
+        if (current == pos) {
+          //LOG.debug("Exact match, no lerp needed");
+          return y0;
+        }
+        final long x = timestamps[current] & TIME_MASK;
+        final long x0 = timestamps[pos] & TIME_MASK;
+        if (x == x0) {
+          //LOG.debug("No lerp needed x == x0 (" + x + " == "+x0+") => " + y0);
+          return y0;
+        }
+        final int next = pos + iterators.length;
+        final double y1 = ((timestamps[next] & FLAG_FLOAT) == FLAG_FLOAT
+                           ? Double.longBitsToDouble(values[next])
+                           : values[next]);
+        final long x1 = timestamps[next] & TIME_MASK;
+        if (x == x1) {
+          //LOG.debug("No lerp needed x == x1 (" + x + " == "+x1+") => " + y1);
+          return y1;
+	}
+	final double r = 0.0;
+        //final double r = y0 + (x - x0) * (y1 - y0) / (x1 - x0);
+        //LOG.debug("Lerping to time " + x + ": " + y0 + " @ " + x0
+        //          + " -> " + y1 + " @ " + x1 + " => " + r);
+        if ((x1 & 0xFFFFFFFF00000000L) != 0) {
+          throw new AssertionError("x1=" + x1 + " in " + this);
+        }
+        return r;
+      }
+      throw new NoSuchElementException("no more doubles in " + this);
+    }
+
 
     public String toString() {
       return "SpanGroup.Iterator(timestamps=" + Arrays.toString(timestamps)

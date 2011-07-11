@@ -148,6 +148,7 @@ final class MetricForm extends HorizontalPanel implements Focusable {
       aggregators.addItem(agg);
       downsampler.addItem(agg);
     }
+    setSelectedItem(aggregators, "zimsum");
     setSelectedItem(aggregators, "sum");
     setSelectedItem(downsampler, "avg");
   }
