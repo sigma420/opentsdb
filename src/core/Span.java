@@ -522,9 +522,6 @@ final class Span implements DataPoints {
     public double nextDoubleValueNoLerp() {
       if (hasNextValue()) {
         moveToNext();
-        // Use `toDouble' instead of `doubleValue' because we can get here if
-        // there's a mix of integer values and floating point values in the
-        // current downsampled interval.
         return current_row.toDouble(pos);
       }
       throw new NoSuchElementException("no more floats in interval of " + this);
