@@ -494,6 +494,13 @@ final class Span implements DataPoints {
       }
       throw new NoSuchElementException("no more longs in interval of " + this);
     }
+    public long nextLongValueNoLerp() {
+      if (hasNextValue()) {
+        moveToNext();
+        return current_row.longValue(pos);
+      }
+      throw new NoSuchElementException("no more longs in interval of " + this);
+    }
 
     // ---------------------------- //
     // Aggregator.Doubles interface //
@@ -506,6 +513,13 @@ final class Span implements DataPoints {
         // there's a mix of integer values and floating point values in the
         // current downsampled interval.
         return current_row.toDouble();
+      }
+      throw new NoSuchElementException("no more floats in interval of " + this);
+    }
+    public double nextDoubleValueNoLerp() {
+      if (hasNextValue()) {
+        moveToNext();
+        return current_row.toDouble(pos);
       }
       throw new NoSuchElementException("no more floats in interval of " + this);
     }

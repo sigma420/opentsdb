@@ -360,6 +360,11 @@ final class GraphHandler implements HttpRpc {
                                  final long end_time,
                                  final int max_age,
                                  final String basepath) throws IOException {
+
+   									 
+    if (System.getProperty("tsd.core.disable_cache") != null)
+		return false;
+
     final String cachepath = basepath + (query.hasQueryStringParam("ascii")
                                          ? ".txt" : ".png");
     final File cachedfile = new File(cachepath);
